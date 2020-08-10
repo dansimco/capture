@@ -2,8 +2,14 @@
 
 local app = include("lib/app")
 
+function audio:vu(in1, in2)
+  print(in1)
+end
+
 function init()
   app.init()
+
+
   app.redraw()
 end
 
@@ -12,12 +18,14 @@ function enc()
 
 end
 
-function key()
-
+function key(n, z)
+  app.key(n, z)
 end
 
 function redraw()
-  app.redraw()
+  if app.ready then
+    app.redraw()
+  end
 end
 
 -- screen metro
