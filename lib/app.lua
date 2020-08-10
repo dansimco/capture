@@ -35,18 +35,17 @@ function app.init()
   audio.level_adc_cut(1)
   audio.level_tape_cut(0)
   audio.level_eng_cut(0)
-  
-  local end_of_loop = 10
-  local cut_pan = {-0.75, 0.75}
-  local time_ref = 0
+
+  local end_of_loop = 6
+  local buffer_pan = {-1, 1}
+  audio.level_cut(1)
+  audio.level_adc_cut(1)
+  audio.level_eng_cut(1)
 
   for si = 1,2 do
-    audio.level_cut(1)
-    audio.level_adc_cut(1)
-    audio.level_eng_cut(1)
     softcut.level(si,1)
     softcut.level_slew_time(si,0.1)
-    softcut.level_input_cut(si, 1, 1.0)
+    softcut.level_input_cut(si, si, 1.0)
     softcut.rate(si, 1)
     softcut.rate_slew_time(si,0.1)
     softcut.loop_start(si, 0)
@@ -60,16 +59,16 @@ function app.init()
     softcut.position(si, 0)
     softcut.buffer(si,si)
     softcut.enable(si, 1)
-    -- softcut.filter_dry(si, 1)
+    softcut.filter_dry(si, 1)
     softcut.rec_offset(si,-0.06)
-    softcut.pan(si, cut_pan[si])
+    softcut.pan(si, buffer_pan[si])
+    print('cut', si)
   end
-  softcut.poll_start_phase()
 
   -- Input events
   app.key2down = function()
     local saved = "sampler-"..string.format("%04.0f",10000*math.random())..".wav"
-    softcut.buffer_write_stereo(_path.dust.."/audio/tape/".. saved, 2, 4)
+    softcut.buffer_write_stereo(_path.dust.."/audio/tape/".. saved, 0, end_of_loop)
     print("write")
   end
   app.ready = true
