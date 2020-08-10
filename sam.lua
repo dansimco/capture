@@ -31,7 +31,7 @@ local saved_time = 2.0
 local start_time = nil
 local current_position = 0
 local last_saved_name = ''
-
+local sam_ui = include("lib/sam_ui")
 
 local function reset_loop()
   softcut.buffer_clear(1)
