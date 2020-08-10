@@ -13,7 +13,8 @@ local app = {
   averaging_window = 16,
   threshold = 0.1,
   poll_freq = 1/15,
-  above_threshold = false,
+  above_threshold_l = false,
+  above_threshold_r = false,
   armed = false
 }
 
@@ -36,7 +37,7 @@ function app.init()
   audio.level_tape_cut(0)
   audio.level_eng_cut(0)
 
-  local end_of_loop = 6
+  local end_of_loop = 8
   local buffer_pan = {-1, 1}
   audio.level_cut(1)
   audio.level_adc_cut(1)
@@ -44,31 +45,29 @@ function app.init()
 
   for si = 1,2 do
     softcut.level(si,1)
-    softcut.level_slew_time(si,0.1)
+    softcut.level_slew_time(si,0.01)
     softcut.level_input_cut(si, si, 1.0)
     softcut.rate(si, 1)
     softcut.rate_slew_time(si,0.1)
     softcut.loop_start(si, 0)
     softcut.loop_end(si, end_of_loop)
     softcut.loop(si, 1)
-    softcut.fade_time(si, 0.1)
+    softcut.fade_time(si, 0.01)
     softcut.rec(si, 1)
     softcut.rec_level(si, 1)
     softcut.pre_level(si, 0)
-    softcut.play(si, 1)
     softcut.position(si, 0)
     softcut.buffer(si,si)
     softcut.enable(si, 1)
     softcut.filter_dry(si, 1)
-    softcut.rec_offset(si,-0.06)
     softcut.pan(si, buffer_pan[si])
-    print('cut', si)
   end
+
 
   -- Input events
   app.key2down = function()
     local saved = "sampler-"..string.format("%04.0f",10000*math.random())..".wav"
-    softcut.buffer_write_stereo(_path.dust.."/audio/tape/".. saved, 0, end_of_loop)
+    softcut.buffer_write_stereo(_path.dust.."/audio/tape/".. saved, 1, end_of_loop-2)
     print("write")
   end
   app.ready = true

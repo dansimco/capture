@@ -5,6 +5,8 @@ function ui.redraw(app)
   screen.aa(0)
   screen.clear()
   screen.level(16)
+  screen.move(0, 10)
+  screen.text("L " .. util.round(app.input_level_l, 0.01) .. "  R " .. util.round(app.input_level_r, 0.01))
   screen.move(0, 30)
   if (app.armed) then
     screen.text("ARMED")
@@ -12,8 +14,8 @@ function ui.redraw(app)
     screen.text("WAITING")
   end
   screen.move(0, 40)
-  if (app.above_threshold) then 
-    state = "recording"
+  if (app.above_threshold_l) then 
+    state = "above threshold"
   else
     state = ""
   end
@@ -27,7 +29,7 @@ end
 
 function ui:draw_meter(x, y, h, l) --x pos, y pos, height, audio Level
   screen.level(3)
-  screen.rect(x, 1+(64-h), 2, h)
+  -- screen.rect(x, 1+(64-h), 2, h)
   screen.fill()
   screen.level(6)
   if above_threshold then screen.level(10) end
