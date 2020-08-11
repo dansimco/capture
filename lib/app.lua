@@ -2,6 +2,13 @@ local parameters = include("lib/parameters")
 local helpers = include("lib/helpers")
 local ui = include("lib/ui")
 
+local record_states = {
+  "IDLE",
+  "ARMED",
+  "RECORDING",
+  "PROCESSING"
+}
+
 local app = {
   ready = false,
   input_level_l = 0,
@@ -9,14 +16,16 @@ local app = {
   average_input_level_l = 0,
   average_input_level_r = 0,
   averaging_window = 16,
-  threshold = 0.05,
+  threshold = 0.001,
   poll_freq = 15, -- hz
-  record_time = 240, -- seconds
   above_threshold_l = false,
   above_threshold_r = false,
-  end_of_loop = 240, -- rolling record buffer
+  end_of_loop = 360, -- rolling record buffer
   rec_metro_position = 0,
-  rec_state = "INIT",
+  clipped_l = false, 
+  clipped_r = false,
+  rec_state = 1,
+  rec_head_position = 0,
   armed = false
 }
 
@@ -28,10 +37,18 @@ function app.init()
   app.init_channel('l')
   app.init_channel('r')
   
+  app.key2up = function() 
+    app.clipped_l = false
+    app.clipped_r = false
+    if app.rec_state == 2 then
+      app.rec_state = 1
+    end
+  end
   app.key3up = app.arm
 
   -- metros
   app.rec_metro = metro.init(app.rec_metro_loop, 1 / app.poll_freq)
+  app.rec_metro:start()
 
   -- softcut setup
   softcut.buffer_clear()
@@ -39,7 +56,6 @@ function app.init()
   audio.level_adc_cut(1)
   audio.level_tape_cut(0)
   audio.level_eng_cut(0)
-  app.end_of_loop = 8
   local buffer_pan = {-1, 1}
   audio.level_cut(1)
   audio.level_adc_cut(1)
@@ -64,9 +80,6 @@ function app.init()
     softcut.filter_dry(si, 1)
     softcut.pan(si, buffer_pan[si])
   end
-
-  -- Input events
-  app.key2down = app.save_buffer
   app.ready = true
 end
 
@@ -79,14 +92,21 @@ function app.init_channel(chan)
   level_poll.callback = function(val)
     app["input_level_" .. chan] = val
     average_level:push(val)
+
+    if val > 0.3 then
+      app["clipped_" .. chan] = true
+    end
+    
     if val > app["average_input_level_" .. chan] then
       app["average_input_level_" .. chan] = val
     else
       app["average_input_level_" .. chan] = average_level.value
     end
+    
     if val > app.threshold then
+
       app["above_threshold_" .. chan] = true
-      if app.rec_state == "ARMED" then
+      if app.rec_state == 2 then
         app.start_recording()
       end
     else
@@ -97,50 +117,99 @@ function app.init_channel(chan)
 end
   
 function app.rec_metro_loop(idx)
-  app.rec_head_position = idx / 15
-  -- restart if getting too close to end of buffer and not recording
-  -- start timeout for cut and save when input goes below threshold
-  if idx >= app.record_time * app.poll_freq then
-    if (app.rec_state == "RECORDING") then
-      app.finish_recording()
-    else
-      app.rec_state = "IDLE"
+
+  app.rec_head_position = app.rec_head_position + 1 / app.poll_freq
+
+  if app.rec_state == 2 then -- armed
+    if app.rec_head_position > 10 then -- reset after 45 seconds to keep enough space in buffer (potential bug)
+      app.reset_recording() 
     end
-    app.rec_metro:stop()
   end
+
+  if app.rec_state == 3 then -- recording
+
+    if app.is_above_threshold() then
+      app.silence_countdown = 1 * app.poll_freq -- debounce three seconds
+      if app.silence_clock then
+        app.silence_clock.cancel()
+        app.silence_clock = nil
+      end
+    else
+      app.silence_countdown = app.silence_countdown - 1
+      print(app.silence_countdown)
+      if app.silence_countdown == 0 then
+        app.finish_recording()
+
+      end
+    end
+
+  end
+
+
+end
+
+
+
+function app.is_above_threshold()
+  local above_threshold = false
+  if app.above_threshold_l or app.above_threshold_r then
+    above_threshold = true
+  end
+  return above_threshold
 end
 
 function app.arm()
-  softcut.buffer_clear()
-  softcut.position(1, 0)
-  softcut.position(2, 0)
-  app.rec_metro:start()
-  app.armed = true
-  app.rec_state = "ARMED"
+  app.reset_recording()
+  app.rec_state = 2
   app.key3up = app.start_recording -- this should probably be handled by something like app.state
 end
 
+function app.reset_recording()
+  print("reset")
+  softcut.buffer_clear()
+  softcut.position(1, 0)
+  softcut.position(2, 0)
+  app.rec_head_position = 0
+end
+
 function app.start_recording()
-  app.rec_state = "RECORDING"
-  app.sample_start = app.rec_head_position - 1 / app.poll_freq --this shouldn't be the case for quantised or it should be different
+  app.rec_state = 3
+  local preroll_frame = app.rec_head_position - 0.5
+  if preroll_frame < 0 then preroll_frame = 0 end
+  app.sample_start = preroll_frame
   app.key3up = app.finish_recording
 end
 
 function app.finish_recording()
-  app.rec_metro:stop()
   app.sample_end = app.rec_head_position
-  app.rec_state = "WRITING"
+  app.rec_state = 4
   print("Sample from", app.sample_start, "to", app.sample_end)
   app.save_buffer()
 end
 
 function app.save_buffer()
-  local saved = "sampler-"..string.format("%04.0f",10000*math.random())..".wav"
-  softcut.buffer_write_stereo(_path.dust.."/audio/tape/".. saved, app.sample_start, app.sample_end)
-  print("write")
-  app.rec_state = "IDLE"
-  app.arm()
+  local raw_file = "capture-"..os.time().."."..util.round(app.sample_end)..".wav"
+  local outfile = "capture-"..os.time().."."..util.round(app.sample_end)..".trim.wav"
+
+  local path_raw = _path.dust.."audio/tape/".. raw_file
+  local path_out = _path.dust.."audio/tape/".. outfile
+
+  softcut.buffer_write_stereo(path_raw, app.sample_start, app.sample_end)
+
+  -- local trim_command = "sox " .. path_raw .. " " .. path_out .. " silence 1 0.005 1%"
+  local trim_command = "sox "..path_raw.." "..path_out.." silence 1 0.1 1% reverse silence 1 0.1 1% fade 0.01 reverse fade 0.01 && rm " .. path_raw
+  -- local norm_command = "sox " .. path_raw .. " " .. path_out .. " norm -2.0"
+  
+  function trim_callback()
+    clock.sleep(1)
+    util.os_capture(trim_command)
+    app.rec_state = 1
+    app.arm()
+  end
+  clock.run(trim_callback)
+
 end
+
 
 function app.redraw()
   ui.redraw(app)
