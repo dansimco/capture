@@ -1,9 +1,3 @@
-# CAPTURE
-
-a stereo auto-sampler for monome norns
-
-key 2: arm -> manual start recording -> finish recording
-key 1: disarm, clear clipping warning
                                                                 
 ```                                                               
                                                      
@@ -37,3 +31,10 @@ key 1: disarm, clear clipping warning
                           #. *.,*/.     
     
 ```
+
+# CAPTURE
+
+a stereo auto-sampler for monome norns
+
+key 2: arm -> manual start recording -> finish recording
+key 1: disarm, clear clipping warning
