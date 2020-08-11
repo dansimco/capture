@@ -6,7 +6,7 @@ Samples a stereo input and saves to audio/tape
 
 Key 2: Arm -> Trigger Recording -> Finish Recording
                                                                 
-                                                                
+```                                                               
                                                                 
                 &%&@@@&@&&@&&@@&&&#                             
             &&&@@&&&&@@&@&@&&@@@&@@@@&#                         
@@ -36,3 +36,5 @@ Key 2: Arm -> Trigger Recording -> Finish Recording
         &&&&&@&&&@@@&@@@&@@@@@&@@@@@@&&@&&                      
             &&@&&@@&&@@&@&&&@&&@&@@&%                           
                       #. *.,*/.     
+
+```
