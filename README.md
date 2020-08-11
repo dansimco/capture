@@ -4,6 +4,10 @@ a stereo auto-sampler for monome norns
 
 key 2: arm -> manual start recording -> finish recording
 key 1: disarm, clear clipping warning
+
+**BEFORE RUNNING**
+
+ssh in and `sudo apt-get update`, `sudo apt-get install sox`
                                                                 
 ```                                                               
                                                      

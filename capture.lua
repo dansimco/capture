@@ -11,6 +11,11 @@
 --      &@@@@@@@@ 
 --        *@@@@@&     
 --
+--
+-- BEFORE RUNNING SSH AND:
+-- sudo apt-get update
+-- sudo apt-get install sox
+--
 -- key 1: 
 --  - disarm,
 --  - clear clipping warning
