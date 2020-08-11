@@ -8,13 +8,9 @@ function ui.redraw(app)
   screen.move(0, 10)
   screen.text("L " .. util.round(app.input_level_l, 0.01) .. "  R " .. util.round(app.input_level_r, 0.01))
   screen.move(0, 30)
-  if (app.armed) then
-    screen.text("ARMED")
-  else
-    screen.text("WAITING")
-  end
+  screen.text(app.rec_state)
   screen.move(0, 40)
-  if (app.above_threshold_l) then 
+  if (app.above_threshold_l or app.above_threshold_r) then 
     state = "above threshold"
   else
     state = ""
