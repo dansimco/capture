@@ -1,5 +1,25 @@
 --          CAPTURE
 --
+--         @&&&&@%      
+--       @@&@@&&&@
+--      &@@&&@@@&@&  
+--      @&&@@&@@@&@
+--      &,     &      @   
+--      @@&&&&&&&@&   
+--      *@@&    @@&   
+--     #@@@&@@@&@   
+--      &@@@@@@@@ 
+--        *@@@@@&     
+--
+-- key 1: 
+--  - disarm,
+--  - clear clipping warning
+--
+-- key 2: 
+--  - arm, 
+--  - manual start recording,
+--  - finish recording
+-- 
 
 local app = include("lib/app")
 

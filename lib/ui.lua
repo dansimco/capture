@@ -1,7 +1,7 @@
 local ui = {}
 
 local record_states = {
-  "IDLE",
+  "IDLE: KEY 3 TO ARM",
   "ARMED",
   "SAMPLING",
   "PROCESSING"
